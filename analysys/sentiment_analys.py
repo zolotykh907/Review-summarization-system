@@ -32,26 +32,9 @@ class SentimentAnalyser:
         self.chain = self.final_prompt | self.llm | self.parser
 
 
-    def analyze_sentiment(self, review):
+    def sentiment_analysis(self, reviews):
         """
-        Analyze the sentiment of a review.
-        
-        Args:
-            review (str): the review text to analyze.
-        
-        Returns:
-            str: the sentiment of the review (positive, negative, neutral).
-        """
-        try:
-            response = self.chain.invoke({"review": review})
-            return response
-        except ValidationError as e:
-            raise ValueError(f"Error validation: {e}")
-
-
-    def analyze_sentiment_list(self, reviews):
-        """
-        Analyze the sentiment of a list of reviews.
+        Analyze the sentiment of a reviews.
         
         Args:
             reviews (list): a list of review texts to analyze.
@@ -61,12 +44,15 @@ class SentimentAnalyser:
         """
         results = []
         for review in reviews:
-            res = self.analyze_sentiment(review)
-            results.append(res)
+            try:
+                response = self.chain.invoke({"review": review})
+                results.append(response)
+            except ValidationError as e:
+                raise ValueError(f"Error validation: {e}")
         return results
     
 
-    def analyze_stats(self, analyze_results):
+    def stats_analysis(self, analysis_results):
         """
         Analyze statistics from the sentiment analysis results.
         
@@ -78,10 +64,28 @@ class SentimentAnalyser:
         """
 
         stats = {"positive": 0, "negative": 0, "neutral": 0}
-        for result in analyze_results:
+        for result in analysis_results:
             if result:
                 stats[result.sentiment] += 1
         return stats
+    
+
+    def full_analysis(self, reviews):
+        """
+        Full analysis of a list of reviews, including sentiment and statistics.
+        
+        Args:
+            reviews (list): a list of review texts to analyze.
+        
+        Returns:
+            dict: a dictionary with sentiments and statistics.
+        """
+        analysys_results = self.sentiment_analysis(reviews)
+        stats = self.stats_analysis(analysys_results)
+        return {
+            "sentiments": analysys_results,
+            "statistics": stats
+        }
     
 
 #Usage example:
@@ -92,8 +96,7 @@ reviews = [
 ]
 
 A = SentimentAnalyser()
-results = A.analyze_sentiment_list(reviews)
-stats = A.analyze_stats(results)
+results = A.full_analysis(reviews)
 
-print(f"Количество обработанных отзывов: {len(results)}")
-print(f"Статистика тональности: {stats}")
+print("Sentiments:", results['sentiments'])
+print("Statistics:", results['statistics'])
