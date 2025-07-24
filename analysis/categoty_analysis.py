@@ -92,15 +92,16 @@ class CategoryAnalyser():
         }
 
 
-#Usage example
-# reviews = [
-#     "Отличный продукт, очень доволен!",
-#     "Сервис ужасный, больше не приду.",
-#     "Доставка быстрая."
-# ]
+if __name__ == "__main__":
+    #Usage example
+    reviews = [
+        "Отличный продукт, очень доволен!",
+        "Сервис ужасный, больше не приду.",
+        "Доставка быстрая."
+    ]
 
-# C = CategoryAnalyser()
-# res = C.full_analysis(reviews)
+    C = CategoryAnalyser()
+    res = C.full_analysis(reviews)
 
-# print(res['categories'])
-# print(res['statistics'])
+    print(res['categories'])
+    print(res['statistics'])

@@ -88,15 +88,16 @@ class SentimentAnalyser:
         }
     
 
-#Usage example:
-# reviews = [
-#     "Отличный продукт, очень доволен!",
-#     "Сервис ужасный, больше не приду.",
-#     "Нормально, но можно лучше."
-# ]
+if __name__ == "__main__":
+    # Example usage
+    reviews = [
+        "Отличный продукт, очень доволен!",
+        "Сервис ужасный, больше не приду.",
+        "Нормально, но можно лучше."
+    ]
 
-# A = SentimentAnalyser()
-# results = A.full_analysis(reviews)
+    A = SentimentAnalyser()
+    results = A.full_analysis(reviews)
 
-# print("Sentiments:", results['sentiments'])
-# print("Statistics:", results['statistics'])
+    print("Sentiments:", results['sentiments'])
+    print("Statistics:", results['statistics'])

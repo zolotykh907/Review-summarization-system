@@ -56,13 +56,15 @@ class Summarizer:
         except ValidationError as e:
             raise ValueError(f"Ошибка валидации: {e}")
 
+                         
+if __name__ == "__main__":
+    # Пример использования
+    reviews = [
+        "Отличный продукт, очень доволен!",
+        "Сервис ужасный, больше не приду.",
+        "Доставка быстрая."
+    ]
 
-reviews = [
-    "Отличный продукт, очень доволен!",
-    "Сервис ужасный, больше не приду.",
-    "Доставка быстрая."
-]
-
-s = Summarizer()
-res = s.summarize(reviews)
-print(res)
+    s = Summarizer()
+    res = s.summarize(reviews)
+    print(res)
