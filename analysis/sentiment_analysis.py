@@ -9,7 +9,7 @@ from langchain.output_parsers import PydanticOutputParser
 
 class SentimentOutput(BaseModel):
     sentiment: str = Field(description="Sentiment label: positive, neutral or negative")
-    explanation: str = Field(description="Explanation in Russian")
+    #explanation: str = Field(description="Explanation in Russian")
 
 
 class SentimentAnalyser:
@@ -20,10 +20,7 @@ class SentimentAnalyser:
         Ответ должен быть строго в формате JSON:
         {{
         "sentiment": "<positive|neutral|negative>",
-        "explanation": "<текст>"
         }}
-        
-        Объяснение обязательно должно быть на русском языке.
         """
         self.llm = OllamaLLM(model=model_name)
         self.prompt = ChatPromptTemplate.from_template(template=self.template)

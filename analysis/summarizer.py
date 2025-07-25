@@ -1,4 +1,3 @@
-import json
 from typing import Literal
 
 from langchain_core.prompts import ChatPromptTemplate
@@ -9,6 +8,7 @@ from langchain.output_parsers import PydanticOutputParser
 
 from categoty_analysis import CategoryAnalyser
 from sentiment_analysis import SentimentAnalyser
+from aspect_analysys import AspectAnalyser
 
 
 class SummaryOutput(BaseModel):
@@ -34,12 +34,9 @@ class Summarizer:
 
         {format_instructions}
         """)
-
         self.chain = self.prompt | self.llm | self.parser
 
-        self.sentiment_analyser = SentimentAnalyser()
-        self.category_analyser = CategoryAnalyser()
-
+        self.aspect_analyser = AspectAnalyser(model_name=model_name)
 
     def summarize(self, reviews):
         sentiments = self.sentiment_analyser.sentiment_analysis(reviews)

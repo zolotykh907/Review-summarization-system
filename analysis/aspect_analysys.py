@@ -16,10 +16,10 @@ class CategorySentiment(BaseModel):
 
 
 class AspectOutput(BaseModel):
-    aspects: List[CategorySentiment] = Field(..., description="Список категорий и соответствующих тональностей, и описаний")
+    aspects: List[CategorySentiment] = Field(..., description="Список категорий и соответствующих тональностей")
 
 
-class CategorySentimentAnalyzer:
+class AspectAnalyser:
     def __init__(self, model_name='llama3'):
         self.parser = PydanticOutputParser(pydantic_object=AspectOutput)
         self.template = """Проанализируй отзыв: {review}
@@ -27,8 +27,7 @@ class CategorySentimentAnalyzer:
         Определи все категории, к которым относится отзыв, категории выбирай из списка: {categories}
 
         Определи тональность отзыва из списка, для каждой определенной категории, тональности выбирай из списка: {sentiments}
-
-        Для каждой категории дай краткое описание из одного слова на русском языке, что пишут про эту категорию в отзыве, например, "долго", "качественно" и т.д.
+        
 
         Формат ответа должен быть таким:
         {format_instructions}
@@ -37,6 +36,7 @@ class CategorySentimentAnalyzer:
         self.llm = OllamaLLM(model=model_name)
         self.final_prompt = self.prompt.partial(format_instructions=self.parser.get_format_instructions())
         self.chain = self.final_prompt | self.llm | self.parser
+
 
     def aspect_analysis(self, reviews, categories, sentiments):
         """
@@ -63,6 +63,7 @@ class CategorySentimentAnalyzer:
             
         return results
     
+
     def stats_analysis(self, analysis_results):
         """
         Analyze statistics from the aspect analysis results.
@@ -93,6 +94,27 @@ class CategorySentimentAnalyzer:
         return stats
     
 
+    def full_analysis(self, reviews, categories, sentiments):
+        """
+        Full analysis of a list of reviews, including aspects and statistics.
+
+        Args:
+            reviews (list): a list of review texts to analyze.
+            categories (list): a list of categories to choose from.
+            sentiments (list): a list of sentiments to choose from.
+
+        Returns:
+            dict: a dictionary with aspects and statistics.
+        """
+        aspects = self.aspect_analysis(reviews, categories, sentiments)
+        stats = self.stats_analysis(aspects)
+
+        return {
+            "aspects": aspects,
+            "statistics": stats
+        }
+    
+
 if __name__ == "__main__":
     # Пример использования
     reviews = [
@@ -104,7 +126,7 @@ if __name__ == "__main__":
     categories = ["товар", "обслуживание", "доставка", "цена", "качество", "интерфейс", "другое"]
     sentiments = ["положительный", "нейтральный", "отрицательный"]
     
-    analyzer = CategorySentimentAnalyzer()
+    analyzer = AspectAnalyser()
     results = analyzer.aspect_analysis(reviews, categories, sentiments)
     stats = analyzer.stats_analysis(results)
     
