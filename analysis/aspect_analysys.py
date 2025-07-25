@@ -5,6 +5,8 @@ from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from pydantic import ValidationError
 
+import pandas as pd
+
 
 from typing import List
 
@@ -21,6 +23,8 @@ class AspectOutput(BaseModel):
 
 class AspectAnalyser:
     def __init__(self, model_name='llama3'):
+        self.categories = ["товар", "обслуживание", "доставка", "цена", "качество", "интерфейс", "другое"]
+        self.sentiments = ["положительный", "нейтральный", "отрицательный"]
         self.parser = PydanticOutputParser(pydantic_object=AspectOutput)
         self.template = """Проанализируй отзыв: {review}
 
@@ -94,7 +98,7 @@ class AspectAnalyser:
         return stats
     
 
-    def full_analysis(self, reviews, categories, sentiments):
+    def full_analysis(self, reviews):
         """
         Full analysis of a list of reviews, including aspects and statistics.
 
@@ -106,12 +110,12 @@ class AspectAnalyser:
         Returns:
             dict: a dictionary with aspects and statistics.
         """
-        aspects = self.aspect_analysis(reviews, categories, sentiments)
+        aspects = self.aspect_analysis(reviews, self.categories, self.sentiments)
         stats = self.stats_analysis(aspects)
 
         return {
             "aspects": aspects,
-            "statistics": stats
+            "stats": stats
         }
     
 
