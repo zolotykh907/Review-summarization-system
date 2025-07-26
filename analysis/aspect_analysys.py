@@ -26,18 +26,23 @@ class AspectAnalyser:
         self.categories = ["товар", "обслуживание", "доставка", "цена", "качество", "интерфейс", "другое"]
         self.sentiments = ["положительный", "нейтральный", "отрицательный"]
         self.parser = PydanticOutputParser(pydantic_object=AspectOutput)
-        self.template = """Проанализируй отзыв: {review}
+        self.template = """
+        Ты — эксперт по анализу отзывов. Проанализируй следующий отзыв и определи, какие из **предопределённых категорий** в нём явно упоминаются. 
+        Отзыв может относиться к нескольким категориям одновременно.
 
-        Определи все категории, к которым относится отзыв, категории выбирай из списка: {categories}
-
-        Определи тональность отзыва из списка, для каждой определенной категории, тональности выбирай из списка: {sentiments}
+        Категории выбирай строго из списка: {categories}
         
+        Так же определи для каждой найденно категории определи тональность.
+        Тональности выбирай строго из списка: {sentiments}
+        
+        Отзыв: {review}
+
 
         Формат ответа должен быть таким:
         {format_instructions}
         """
         self.prompt = ChatPromptTemplate.from_template(self.template)
-        self.llm = OllamaLLM(model=model_name)
+        self.llm = OllamaLLM(model=model_name, temperature=0.1, max_tokens=1000)
         self.final_prompt = self.prompt.partial(format_instructions=self.parser.get_format_instructions())
         self.chain = self.final_prompt | self.llm | self.parser
 
@@ -123,7 +128,7 @@ if __name__ == "__main__":
     # Пример использования
     reviews = [
         "Отличный товар, очень доволен покупкой!",
-        "Доставка была задержана, но в целом все хорошо.",
+        "Доставка была задержана",
         "Доставка ужасно долгая, но обслуживание отличное.",
     ]
     

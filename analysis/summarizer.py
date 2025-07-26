@@ -21,13 +21,27 @@ class Summarizer:
         self.llm = OllamaLLM(model=model_name)
 
         self.parser = PydanticOutputParser(pydantic_object=SummaryOutput)
-        self.prompt = ChatPromptTemplate.from_template("""
-        Вот таблица в формате markdown со статистикой анализа отзывов по категориям и тональностям: {stats}.
+        # self.prompt = ChatPromptTemplate.from_template("""
+        # Вот таблица в формате markdown со статистикой анализа отзывов по категориям и тональностям: {stats}.
 
-        Сделай краткое саммари на русском языке: какие категории чаще всего упоминаются, и опиши каждую категорию по тональности.
-        Ответ формируй исходя только из данных в таблице, не добавляй ничего лишнего.
+        # Сделай краткое саммари на русском языке: какие категории чаще всего упоминаются, и опиши каждую категорию по тональности.
+        # Ответ формируй исходя только из данных в таблице, не добавляй ничего лишнего.
                                                        
-        Формат ответа должен быть таким:                                     
+        # Формат ответа должен быть таким:                                     
+        # {format_instructions}
+        # """)
+        self.prompt = ChatPromptTemplate.from_template("""
+        Ниже представлена статистика анализа отзывов. По каждой категории указано, сколько отзывов с каждой тональностью.
+
+        Твоя задача:
+        1. Определи, какие категории упоминаются чаще всего (по столбцу 'всего').
+        2. Для каждой категории опиши, какой тип отзывов преобладает — положительный, нейтральный или отрицательный.
+        3. Не делай выводов вне представленных чисел. Формулировки должны быть краткими и объективными.
+
+        Статистика:
+        {stats}
+
+        Формат вывода (JSON):
         {format_instructions}
         """)
         self.final_prompt = self.prompt.partial(format_instructions=self.parser.get_format_instructions())
@@ -59,10 +73,27 @@ class Summarizer:
 
         return df
     
+    def stats_to_text(self, stats: dict) -> str:
+        lines = []
+        for category, values in stats.items():
+            sentiments = values['sentiments']
+            lines.append(
+                f"Категория: {category}\n"
+                f"Положительных: {sentiments.get('положительный', 0)}\n"
+                f"Отрицательных: {sentiments.get('отрицательный', 0)}\n"
+                f"Нейтральных: {sentiments.get('нейтральный', 0)}\n"
+                f"Всего: {values['count']}\n"
+            )
+
+        print(lines)
+        return "\n".join(lines)
+
 
     def summarize(self, reviews):
         analysys_results = self.aspect_analyser.full_analysis(reviews)
-        stats_str = self.stats_to_df(analysys_results['stats']).to_markdown(index=False)
+        print(analysys_results['stats'])
+        #stats_str = self.stats_to_df(analysys_results['stats']).to_markdown(index=False)
+        stats_str = self.stats_to_text(analysys_results['stats'])
 
         try:
             response = self.chain.invoke({

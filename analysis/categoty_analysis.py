@@ -11,7 +11,7 @@ from langchain.output_parsers import PydanticOutputParser
 class CategoryOutput(BaseModel):
     category: Literal[
         "товар", "обслуживание", "доставка", "цена", "качество", "интерфейс", "другое"
-    ] = Field(description="Категория отзыва")
+    ] = Field(..., description="Категория отзыва")
 
 class CategoryAnalyser():
     def __init__(self, model_name='llama3'):

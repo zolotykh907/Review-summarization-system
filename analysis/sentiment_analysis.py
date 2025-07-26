@@ -1,4 +1,5 @@
 import json
+from typing import Literal
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama.llms import OllamaLLM
@@ -8,18 +9,22 @@ from langchain.output_parsers import PydanticOutputParser
 
 
 class SentimentOutput(BaseModel):
-    sentiment: str = Field(description="Sentiment label: positive, neutral or negative")
-    #explanation: str = Field(description="Explanation in Russian")
+    sentiment: Literal[
+        "позитивный", "нейтральный", "негативный"
+    ] = Field(..., description="Категория отзыва")
 
 
 class SentimentAnalyser:
     def __init__(self, model_name='llama3'):
+        self.sentiments = ["позитивный", "нейтральный", "негативный"]
         self.template = """
         Проанализируй тональность этого отзыва: {review}\n
 
+        Тональности выбирай строго из списка: {sentiments}\n
+
         Ответ должен быть строго в формате JSON:
         {{
-        "sentiment": "<positive|neutral|negative>",
+        "sentiment": "...",
         }}
         """
         self.llm = OllamaLLM(model=model_name)
@@ -42,7 +47,7 @@ class SentimentAnalyser:
         results = []
         for review in reviews:
             try:
-                response = self.chain.invoke({"review": review})
+                response = self.chain.invoke({"review": review, "sentiments": self.sentiments})
                 results.append(response)
             except ValidationError as e:
                 raise ValueError(f"Error validation: {e}")
@@ -60,7 +65,7 @@ class SentimentAnalyser:
             dict: a dictionary with counts of each sentiment type.
         """
 
-        stats = {"positive": 0, "negative": 0, "neutral": 0}
+        stats = {sentiment: 0 for sentiment in self.sentiments}
         for result in analysis_results:
             if result:
                 stats[result.sentiment] += 1
