@@ -87,7 +87,7 @@ class Summarizer:
             })
             return response.model_dump()
         except ValidationError as e:
-            raise ValueError(f"Ошибка валидации: {e}")
+            raise ValueError(f'Validation Error: {e}')
     
 
     def split_to_batches(self, reviews):
@@ -116,7 +116,7 @@ class Summarizer:
                 response = batch_chain.invoke({"reviews": "\n".join(batch)})
                 results.append(response)
             except ValidationError as e:
-                raise ValueError(f"Ошибка валидации: {e}")
+                raise ValueError(f'Validation Error: {e}')
         return results
         
 
@@ -127,8 +127,8 @@ class Summarizer:
         {summary_text}
                                                           
         Твоя задача: дай краткое резюме на 3-5 предложений, подводя итоги по всем отзывам.
-        Отвечай строго на русском языке.
                                                           
+        Отвечай строго на русском языке.                                             
         """)
         summary_chain = summary_prompt | self.llm
         summary_batches = self.summarize_batches(reviews)
@@ -138,13 +138,33 @@ class Summarizer:
             response = summary_chain.invoke({"summary_text": summary_text})
             return response
         except ValidationError as e:
-            raise ValueError(f"Ошибка валидации: {e}")
+            raise ValueError(f'Validation Error: {e}')
+        
+    
+    def get_recommendation(self, summary_results):
+        recommendation_prompt = ChatPromptTemplate.from_template("""
+        Ты - эксперт по анализу отзывов. Вот краткая сводка по отзывам:
+
+        {summary_results}                                       
+        
+        Нужно написать рекомендации по улучшению того, о чем говорится в этой сводке.
+        Не пиши ничего лишнего, только про те вещи, которые имеют минусы.
+
+        Отвечай строго на русском языке.                                        
+        """)
+        recommendation_chain = recommendation_prompt | self.llm
+
+        try:
+            response = recommendation_chain.invoke({"summary_results": summary_results})
+            return response
+        except ValidationError as e:
+            raise ValueError(f'Validation Error: {e}')
+
                          
 if __name__ == "__main__":
     # Usage example
     reviews = [
         "Отличный продукт, очень доволен!",
-        "Доставка ужасная",
         "Доставка быстрая.",
         "В принципе, неплохо, но есть недочеты.",
         "Обслуживание на высоте",
@@ -155,4 +175,6 @@ if __name__ == "__main__":
     # res = s.summarize_stats(reviews)
     # print(res)
 
-    print(s.summarize_reviews(reviews))
+    summary = s.summarize_reviews(reviews)
+    print(summary)
+    print(s.get_recommendation(summary_results=summary))
