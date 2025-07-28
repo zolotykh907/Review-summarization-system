@@ -120,6 +120,25 @@ class Summarizer:
         return results
         
 
+    def summarize_reviews(self, reviews):
+        summary_prompt = ChatPromptTemplate.from_template("""
+        Ты - эксперт по анализу отзывов. Вот краткая сводка по отзывам: 
+                                                          
+        {summary_text}
+                                                          
+        Твоя задача: дай краткое резюме на 3-5 предложений, подводя итоги по всем отзывам.
+        Отвечай строго на русском языке.
+                                                          
+        """)
+        summary_chain = summary_prompt | self.llm
+        summary_batches = self.summarize_batches(reviews)
+        summary_text = "\n".join(summary_batches)
+
+        try:
+            response = summary_chain.invoke({"summary_text": summary_text})
+            return response
+        except ValidationError as e:
+            raise ValueError(f"Ошибка валидации: {e}")
                          
 if __name__ == "__main__":
     # Usage example
@@ -136,4 +155,4 @@ if __name__ == "__main__":
     # res = s.summarize_stats(reviews)
     # print(res)
 
-    print(s.summarize_batches(reviews))
+    print(s.summarize_reviews(reviews))
