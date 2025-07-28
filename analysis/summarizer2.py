@@ -58,22 +58,27 @@ class Summarizer:
                 f"Нейтральных: {sentiments['нейтральный']}\n"
             )
         return "\n".join(lines)
+    
 
-
-    def summarize(self, reviews):
-        categories = self.category_analyser.full_analysis(reviews)['categories']
-        sentiments = self.sentiment_analyser.full_analysis(reviews)['sentiments']
-
-        categories = [c.category for c in categories]
-        sentiments = [s.sentiment for s in sentiments]
-
+    def combine_stats(self, categories, sentiments):
         stats = {}
         for i in range(len(categories)):
             if categories[i] not in stats:
                 stats[categories[i]] = {sentiment: 0 for sentiment in self.sentiments}
             stats[categories[i]][sentiments[i]] += 1
 
-        stats_str = self.stats_to_text(stats)
+        return stats
+
+
+    def summarize_stats(self, reviews):
+        categories = self.category_analyser.full_analysis(reviews)['categories']
+        sentiments = self.sentiment_analyser.full_analysis(reviews)['sentiments']
+
+        categories = [c.category for c in categories]
+        sentiments = [s.sentiment for s in sentiments]
+
+        combined_stats = self.combine_stats(categories, sentiments)
+        stats_str = self.stats_to_text(combined_stats)
 
         try:
             response = self.chain.invoke({
@@ -83,6 +88,36 @@ class Summarizer:
             return response.model_dump()
         except ValidationError as e:
             raise ValueError(f"Ошибка валидации: {e}")
+    
+
+    def split_to_batches(self, reviews):
+        self.batch_size = 5
+
+        batches = []
+        for i in range(0, len(reviews), self.batch_size):
+            batches.append(reviews[i: i+self.batch_size])
+
+        return batches
+    
+
+    def summarize_batches(self, reviews):
+        batch_prompt = ChatPromptTemplate.from_template("""
+        Ты — эксперт по анализу отзывов. Проанализируй следующие отзывы и дай обобщенное краткое резюме на 2-3 предложения.
+        Отвечай строго на русском языке.
+                                                        
+        Отзывы: {reviews}
+        """)
+        batch_chain = batch_prompt | self.llm
+        
+        batches = self.split_to_batches(reviews)
+        results = []
+        for batch in batches:
+            try:
+                response = batch_chain.invoke({"reviews": "\n".join(batch)})
+                results.append(response)
+            except ValidationError as e:
+                raise ValueError(f"Ошибка валидации: {e}")
+        return results
         
 
                          
@@ -91,9 +126,14 @@ if __name__ == "__main__":
     reviews = [
         "Отличный продукт, очень доволен!",
         "Доставка ужасная",
-        "Доставка быстрая."
+        "Доставка быстрая.",
+        "В принципе, неплохо, но есть недочеты.",
+        "Обслуживание на высоте",
+        "Качество товара оставляет желать лучшего",
     ]
 
     s = Summarizer()
-    res = s.summarize(reviews)
-    print(res)
+    # res = s.summarize_stats(reviews)
+    # print(res)
+
+    print(s.summarize_batches(reviews))
